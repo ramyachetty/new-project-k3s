@@ -40,7 +40,7 @@ jobs:
 
       - name: Deploy Cucumber job
         run: |
-          sed "s|IMAGE_PLACEHOLDER|$IMAGE|" k8s/job-template.yml > job.yml
+          sed "s|IMAGE_PLACEHOLDER|$IMAGE|" k8s/job-temp.yml > job.yml
           kubectl apply -f job.yml
 
       - name: Wait for job completion
