@@ -20,5 +20,6 @@ WORKDIR /app
 COPY --from=build /app /app
 
 # Default command: run tests with optional tag
-CMD ["mvn", "test", "-Dcucumber.filter.tags=${CUCUMBER_TAGS:-@smoke}"]
+CMD ["sh", "-c", "mvn test -Dcucumber.filter.tags=${CUCUMBER_TAGS:-@smoke}"]
+
 
