@@ -34,7 +34,7 @@ jobs:
       - name: Build Docker image
         run: |
           IMAGE=ci-cucumber:${{ github.sha }}
-          docker build -t $IMAGE ./platform-blackbox-test
+          docker build -t $IMAGE .
           k3d image import $IMAGE -c ci-cluster
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
 
