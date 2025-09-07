@@ -53,12 +53,21 @@ jobs:
           echo "Pod name: $POD"
           kubectl logs $POD
 
+      - name: List contents of target directory
+        run: |
+         POD=$(kubectl get pods -l job-name=cucumber-tests -o jsonpath='{.items[0].metadata.name}')
+         echo "Inspecting /app/target in pod: $POD"
+         kubectl exec $POD -- ls -R /app/target || echo "⚠️ /app/target not found"
+
+
       - name: Copy reports
         run: |
-          POD=$(kubectl get pods -l job-name=cucumber-tests -o jsonpath='{.items[0].metadata.name}')
-          echo "Copying reports from pod: $POD"
-          mkdir -p ./reports
-          kubectl cp $POD:/app/target/cucumber-reports ./reports || echo "⚠️ No reports directory found inside pod"
+         POD=$(kubectl get pods -l job-name=cucumber-tests -o jsonpath='{.items[0].metadata.name}')
+         echo "Copying reports from pod: $POD"
+         mkdir -p ./reports
+         kubectl cp $POD:/app/target/cucumber-reports ./reports/cucumber-reports || echo "⚠️ cucumber-reports not found"
+         kubectl cp $POD:/app/target/surefire-reports ./reports/surefire-reports || echo "⚠️ surefire-reports not found"
+
  
       - name: Upload reports
         uses: actions/upload-artifact@v4
