@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: reports-reader
+spec:
+  containers:
+    - name: reader
+      image: alpine
+      command: ["sleep", "3600"]
+      volumeMounts:
+        - name: reports-storage
+          mountPath: /reports
+  volumes:
+    - name: reports-storage
+      persistentVolumeClaim:
+        claimName: reports-pvc
+

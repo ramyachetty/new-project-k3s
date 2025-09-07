@@ -12,6 +12,13 @@ spec:
             - name: CUCUMBER_TAGS
               value: "@regression"
           command: ["mvn", "test", "-Dcucumber.filter.tags=$(CUCUMBER_TAGS)"]
+          volumeMounts:
+            - name: reports-storage
+              mountPath: /app/target/cucumber-reports
       restartPolicy: Never
+      volumes:
+        - name: reports-storage
+          persistentVolumeClaim:
+            claimName: reports-pvc
   backoffLimit: 0
 
