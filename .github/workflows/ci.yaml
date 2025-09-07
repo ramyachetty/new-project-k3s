@@ -1,0 +1,70 @@
+name: Run Maven Tests from Config File
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Read configuration from file and Set Environment Variables
+        id: read_config
+        run: |
+          CONFIG_FILE="config.properties"
+          if [[ ! -f "$CONFIG_FILE" ]]; then
+            echo "::error::Configuration file '$CONFIG_FILE' not found."
+            exit 1
+          fi
+
+          echo "--- Content of $CONFIG_FILE ---"
+          cat "$CONFIG_FILE"
+          echo "--- End of $CONFIG_FILE ---"
+          echo "Processing configuration..."
+
+          while IFS='=' read -r key value || [[ -n "$key" ]]; do
+            key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+            echo "Processing line: Key='${key}', Value='${value}'"
+            env_var_name="CONFIG_$(echo "$key" | tr '[:lower:]' '[:upper:]' | tr '.' '_')"
+            echo "Setting env var: ${env_var_name}"
+            echo "${env_var_name}=${value}" >> "$GITHUB_ENV"
+
+          done < <(tr -d '\r' < "$CONFIG_FILE")
+
+
+          echo "Verifying required environment variables..."
+          source $GITHUB_ENV
+          if [[ -z "${CONFIG_BASE_URI}" ]]; then echo "::error::CONFIG_BASE_URI not set from file."; fi
+          if [[ -z "${CONFIG_API_KEY}" ]]; then echo "::error::CONFIG_API_KEY not set from file."; fi
+          if [[ -z "${CONFIG_SITE_KEY}" ]]; then echo "::error::CONFIG_SITE_KEY not set from file."; fi
+
+      - name: Compile Test Classes
+        run: mvn test-compile -e
+
+      - name: Run Cucumber Tests via Maven
+        run: |
+          FINAL_API_KEY="${{ env.SECRET_API_KEY || env.CONFIG_API_KEY }}"
+
+          echo "Using Base URI: ${{ env.CONFIG_BASE_URI }}"
+          echo "Using Site Key: ${{ env.CONFIG_SITE_KEY }}"
+          echo "Using API Key from: ${{ env.FINAL_API_KEY }}"
+
+          mvn -e exec:java \
+            -DbaseUri="${{ env.CONFIG_BASE_URI }}" \
+            -DapiKey="$FINAL_API_KEY" \
+            -DsiteKey="${{ env.CONFIG_SITE_KEY }}"
